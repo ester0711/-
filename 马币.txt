@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小金库累积 - 马币版</title>
+    <style>
+        :root {
+            --primary: #006442; /* 马来西亚护照/金融常用深绿色 */
+            --accent: #FFD700;  /* 金色 */
+            --bg: #f4f7f6;
+            --card-bg: #ffffff;
+            --text: #333;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            width: 100%;
+            max-width: 480px;
+            position: relative;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+        }
+
+        /* 设置面板样式 */
+        .settings-panel {
+            background: #fff;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #eee;
+            border-radius: 10px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+
+        .btn-save {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .btn-save:hover {
+            background-color: #004d33;
+        }
+
+        /* 显示面板样式 */
+        .display-panel {
+            text-align: center;
+        }
+
+        .money-card {
+            background: linear-gradient(135deg, #006442 0%, #004d33 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(0,100,66,0.3);
+        }
+
+        .money-title {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .money-value {
+            font-size: 3rem;
+            font-weight: 700;
+            font-family: 'Courier New', monospace; /* 等宽字体防止跳动 */
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .currency-symbol {
+            font-size: 1.5rem;
+            vertical-align: super;
+            margin-right: 5px;
+        }
+
+        .per-second {
+            font-size: 0.8rem;
+            margin-top: 10px;
+            opacity: 0.8;
+            background: rgba(255,255,255,0.1);
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .section-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .section-title {
+            font-size: 0.85rem;
+            color: #888;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .countdown-time {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--text);
+        }
+
+        /* 进度条 */
+        .progress-container {
+            height: 8px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--accent);
+            width: 0%;
+            transition: width 1s linear;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .edit-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: #999;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="settingsPanel" class="settings-panel">
+        <h1>🛠️ 摸鱼参数设置</h1>
+        
+        <div class="form-group">
+            <label>月薪 (RM)</label>
+            <input type="number" id="salary" placeholder="例如: 5000" value="5000">
+        </div>
+
+        <div class="form-group">
+            <label>每月工作天数 (默认22天)</label>
+            <input type="number" id="workDays" value="22">
+        </div>
+
+        <div class="form-group">
+            <label>上班时间</label>
+            <input type="time" id="startTime" value="09:00">
+        </div>
+
+        <div class="form-group">
+            <label>下班时间</label>
+            <input type="time" id="endTime" value="18:00">
+        </div>
+
+        <div class="form-group">
+            <label>退休目标日期</label>
+            <input type="date" id="retireDate">
+        </div>
+
+        <button class="btn-save" onclick="saveAndStart()">🚀 开始累计小金库</button>
+    </div>
+
+    <div id="displayPanel" class="display-panel hidden">
+        <button class="edit-btn" onclick="toggleSettings()">⚙️ 修改设置</button>
+        <h1>💰 小金库累计</h1>
+
+        <div class="money-card">
+            <div class="money-title">今日已赚取</div>
+            <div class="money-value"><span class="currency-symbol">RM</span><span id="earnedMoney">0.00</span></div>
+            <div class="per-second">秒薪: RM <span id="salaryPerSecond">0.0000</span></div>
+        </div>
+
+        <div class="section-card">
+            <div class="section-title">
+                <span>⏳ 距离下班</span>
+                <span id="progressText">0%</span>
+            </div>
+            <div class="countdown-time" id="workCountdown">--:--:--</div>
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+        </div>
+
+        <div class="section-card">
+            <div class="section-title">🌴 距离退休</div>
+            <div class="countdown-time" id="retireCountdown" style="color: #666; font-size: 1.1rem;">
+                未设置日期
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let timer;
+
+    // 页面加载时读取缓存
+    window.onload = function() {
+        const savedSalary = localStorage.getItem('my_salary');
+        if (savedSalary) {
+            document.getElementById('salary').value = savedSalary;
+            document.getElementById('workDays').value = localStorage.getItem('my_workDays') || 22;
+            document.getElementById('startTime').value = localStorage.getItem('my_startTime') || "09:00";
+            document.getElementById('endTime').value = localStorage.getItem('my_endTime') || "18:00";
+            document.getElementById('retireDate').value = localStorage.getItem('my_retireDate') || "";
+            
+            // 直接进入显示模式
+            toggleSettings(false);
+            startTimer();
+        }
+    };
+
+    function toggleSettings(showSettings = true) {
+        if (showSettings) {
+            document.getElementById('settingsPanel').classList.remove('hidden');
+            document.getElementById('displayPanel').classList.add('hidden');
+            clearInterval(timer);
+        } else {
+            document.getElementById('settingsPanel').classList.add('hidden');
+            document.getElementById('displayPanel').classList.remove('hidden');
+        }
+    }
+
+    function saveAndStart() {
+        const salary = document.getElementById('salary').value;
+        const workDays = document.getElementById('workDays').value;
+        const startTime = document.getElementById('startTime').value;
+        const endTime = document.getElementById('endTime').value;
+        const retireDate = document.getElementById('retireDate').value;
+
+        if (!salary || !startTime || !endTime) {
+            alert('请填写完整的薪资和时间信息！');
+            return;
+        }
+
+        // 保存到本地存储
+        localStorage.setItem('my_salary', salary);
+        localStorage.setItem('my_workDays', workDays);
+        localStorage.setItem('my_startTime', startTime);
+        localStorage.setItem('my_endTime', endTime);
+        localStorage.setItem('my_retireDate', retireDate);
+
+        toggleSettings(false);
+        startTimer();
+    }
+
+    function startTimer() {
+        if (timer) clearInterval(timer);
+        updateDisplay(); // 立即运行一次
+        timer = setInterval(updateDisplay, 100); // 每100毫秒刷新
+    }
+
+    function updateDisplay() {
+        const now = new Date();
+        
+        // --- 1. 获取用户设置 ---
+        const salary = parseFloat(document.getElementById('salary').value);
+        const workDays = parseFloat(document.getElementById('workDays').value);
+        const startTimeStr = document.getElementById('startTime').value;
+        const endTimeStr = document.getElementById('endTime').value;
+        
+        // --- 2. 构造今天的时间对象 ---
+        const [startH, startM] = startTimeStr.split(':');
+        const [endH, endM] = endTimeStr.split(':');
+        
+        const startDate = new Date();
+        startDate.setHours(startH, startM, 0, 0);
+        
+        const endDate = new Date();
+        endDate.setHours(endH, endM, 0, 0);
+
+        // 计算全天工作总秒数
+        const totalWorkMs = endDate - startDate;
+        
+        // 计算秒薪 (月薪 / 工作天数 / 每天工作毫秒数)
+        // 防止除以0
+        if (totalWorkMs <= 0) return;
+        const salaryPerMs = (salary / workDays) / totalWorkMs;
+        
+        // --- 3. 计算已赚取的钱 ---
+        let currentWorkMs = now - startDate;
+        
+        // 边界处理：还没上班
+        if (currentWorkMs < 0) currentWorkMs = 0;
+        // 边界处理：已经下班
+        if (currentWorkMs > totalWorkMs) currentWorkMs = totalWorkMs;
+
+        const earned = currentWorkMs * salaryPerMs;
+        const perSecond = salaryPerMs * 1000;
+
+        // 更新DOM
+        document.getElementById('earnedMoney').innerText = earned.toFixed(4); // 保留4位小数增加跳动感
+        document.getElementById('salaryPerSecond').innerText = perSecond.toFixed(4);
+
+        // --- 4. 下班倒计时 & 进度条 ---
+        let remainingMs = endDate - now;
+        let percentage = (currentWorkMs / totalWorkMs) * 100;
+        
+        if (remainingMs <= 0) {
+            document.getElementById('workCountdown').innerText = "🎉 已下班！";
+            document.getElementById('workCountdown').style.color = "#006442";
+            percentage = 100;
+        } else if (now < startDate) {
+            document.getElementById('workCountdown').innerText = "💤 尚未开工";
+            percentage = 0;
+        } else {
+            // 格式化倒计时
+            const h = Math.floor(remainingMs / 3600000);
+            const m = Math.floor((remainingMs % 3600000) / 60000);
+            const s = Math.floor((remainingMs % 60000) / 1000);
+            document.getElementById('workCountdown').innerText = 
+                `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            document.getElementById('workCountdown').style.color = "#333";
+        }
+
+        document.getElementById('progressBar').style.width = percentage + "%";
+        document.getElementById('progressText').innerText = percentage.toFixed(1) + "%";
+
+        // --- 5. 退休倒计时 ---
+        const retireDateStr = document.getElementById('retireDate').value;
+        if (retireDateStr) {
+            const retireDate = new Date(retireDateStr);
+            const diffMs = retireDate - now;
+
+            if (diffMs > 0) {
+                const rYears = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 365));
+                const rDays = Math.floor((diffMs % (1000 * 60 * 60 * 24 * 365)) / (1000 * 60 * 60 * 24));
+                const rHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                
+                let text = "";
+                if(rYears > 0) text += `${rYears}年 `;
+                text += `${rDays}天 ${rHours}小时`;
+                
+                document.getElementById('retireCountdown').innerText = text;
+            } else {
+                document.getElementById('retireCountdown').innerText = "👴 您已到达退休日期！";
+            }
+        } else {
+            document.getElementById('retireCountdown').innerText = "未设置日期，请点击右上角设置";
+        }
+    }
+</script>
+
+</body>
+</html>
